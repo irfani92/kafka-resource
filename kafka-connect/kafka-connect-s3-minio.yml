@@ -1,0 +1,76 @@
+# Run first: zk-single-kafka-single-ui-net-ext.yml
+name: kafka-connect-s3-minio
+
+services:
+  
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.7.1
+    container_name: schema-registry-minio
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka1:9092"
+    networks:
+      - kafka-external-net
+  
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect-base:7.7.1
+    container_name: kafka-connect-minio
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka1:9092"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components,/usr/share/filestream-connectors
+    volumes:
+      - ./data:/data
+    command:
+      - bash
+      - -c
+      - |
+        echo "Installing S3 Connector" && \
+        confluent-hub install --no-prompt confluentinc/kafka-connect-s3:latest && \
+        echo "Starting Kafka Connect worker" && \
+        /etc/confluent/docker/run
+    networks:
+      - kafka-external-net
+
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password12345
+      MINIO_ACCESS_KEY_FILE: admin
+      MINIO_SECRET_KEY_FILE: password12345
+      MINIO_ROOT_USER_FILE: admin
+      MINIO_ROOT_PASSWORD_FILE: password12345
+    command: server --console-address ":9001" /data
+    ports:
+      - "9010:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5      
+    networks:
+      - kafka-external-net
+
+
+networks:
+  kafka-external-net:
+    external: true

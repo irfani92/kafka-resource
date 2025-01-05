@@ -1,0 +1,114 @@
+docker exec -it kafka1 bash
+[appuser@kafka1 ~]$ kafka-topics --version
+7.8.0-ccs
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --list
+topic1
+[appuser@kafka1 ~]$ kafka-topics --help
+
+[appuser@kafka1 ~]$ kafka-topics --version
+7.8.0-ccs
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --list
+topic1
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --create --topic myrepublickafka --partitions 3 --replication-factor 1
+Created topic myrepublickafka.
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --list
+myrepublickafka
+topic1
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --delete --topic myrepublickafka
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --list
+topic1
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --create --topic myrepublic kafka --partitions 3 --replication-factor 1
+Created topic myrepublic.
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --list
+myrepublic
+topic1
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --create --topic myrepublic_kafka --partitions 3 --replication-factor 1
+WARNING: Due to limitations in metric names, topics with a period ('.') or underscore ('_') could collide. To avoid issues it is best to use either, but not both.
+Created topic myrepublic_kafka.
+[appuser@kafka1 ~]$ clear
+bash: clear: command not found
+[appuser@kafka1 ~]$ clear
+bash: clear: command not found
+[appuser@kafka1 ~]$ cls
+bash: cls: command not found
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --list
+myrepublic
+myrepublic_kafka
+topic1
+[appuser@kafka1 ~]$ kafka-console-produces --broker-list localhost:9092 --topic myrepublic
+bash: kafka-console-produces: command not found
+[appuser@kafka1 ~]$ kafka-console-producer --broker-list localhost:9092 --topic myrepublic
+>Hello, Kafka !
+>This message from Kafka producer!
+>^C[appuser@kafka1 ~]$ kafka-console-producer --broker-list localhost:9092 --topic myrepublic
+>Damn't!
+>What happened ?
+>Here are those Ani's gifts
+
+[appuser@kafka1 ~]$ kafka-console-producer --broker-list localhost:9092 --topic myrepublic --property "parse.key=true" --property "key.separator=:"
+>key1:Message with key1
+>key2:Message with key2
+>key3:Message with key3
+>^C[appuser@kafka1 ~]$ kafka-console-consumer --bootstrap-server localhost:9092 --topic myrepublic --from-beginning --property print.key=true --property print.value=true
+bash: kafka-console-proconsumer: command not found
+[appuser@kafka1 ~]$ kafka-console-consumer --bootstrap-server localhost:9092 --topic myrepublic --from-beginning --property print.key=true --property print.value=true
+key1	Message with key1
+key2	Message with key2
+key3	Message with key3
+null	Hello, Kafka !
+null	This message from Kafka producer!
+null	Damn't!
+null	What happened ?
+null	Here are those Ani's gifts
+^CProcessed a total of 8 messages
+
+[appuser@kafka1 ~]$ kafka-console-producer --broker-list localhost:9092 --topic myrepublic --producer-property acks=all
+>High-acknowledgment message 1
+>High-acknowledgment message 2
+>^C[appuser@kafka1 ~]$ kafka-console-producer --broker-list localhost:9092 --topic myrepublic --producer-property retries=5
+>Message 1 that may retry
+>Message 2 that may retry                       
+>^C[appuser@kafka1 ~]$ kafka-console-producer --broker-list localhost:9092 --topic myrepublic --producer-property compression.type=gzip
+>Compressed message 1
+>Compressed message 2
+>^C[appuser@kafka1 ~]$ kafka-console-producer --broker-list localhost:9092 --topic myrepublic --producer-property batch.size=16384
+>Message 1 in batch
+>Message 2 in batch
+>
+[appuser@kafka1 ~]$  kafka-console-consumer --bootstrap-server localhost:9092 --topic myrepublic --group my-group --from-beginning
+appuser@kafka1 ~kafka-topics --bootstrap-server localhost:9092 --list
+__consumer_offsets
+myrepublic
+myrepublic_kafka
+
+[appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --describe --topic myrepublic
+
+[appuser@kafka1 ~]$ kafka-topics --create --topic retention-demo-topic --bootstrap-server localhost:9092 --partitions 3 replication-factor 1 --config retention.ms=60000
+Created topic retention-demo-topic.
+[appuser@kafka1 ~]$ kafka-configs --describe --bootstrap-server localhost:9092 --entity-type topics --entity-name retention-demo-topic
+Dynamic configs for topic retention-demo-topic are:
+  retention.ms=60000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=60000}
+[appuser@kafka1 ~]$ kafka-configs --alter --bootstrap-server localhost:9092 --entity-type topics --entity-name retention-demo-topic --add-config retention.ms=30000
+Completed updating config for topic retention-demo-topic.
+[appuser@kafka1 ~]$ kafka-configs --describe --bootstrap-server localhost:9092 --entity-type topics --entity-name retention-demo-topic
+Dynamic configs for topic retention-demo-topic are:
+  retention.ms=30000 sensitive=false synonyms={DYNAMIC_TOPIC_CONFIG:retention.ms=30000}
+
+irfan@MacBook-Pro-irfan ~ % docker network create kafka-external-net
+f48f8ef156865f68a95cf8d6db30a25419097fadfc05d43124f4d4c855216d44
+irfan@MacBook-Pro-irfan ~ % docker network ls                       
+NETWORK ID     NAME                                    DRIVER    SCOPE
+e4c1c13d7481   bridge                                  bridge    local
+9ea7c180817e   dst-docker-boss_boss-network-dst        bridge    local
+b089018a4aaa   host                                    host      local
+f48f8ef15686   kafka-external-net                      bridge    local
+da0901ffbb52   none                                    null      local
+0a315428e4e6   zk-single-kafka-multiple-ui_kafka-net   bridge    local
+
+
+# kafka FLINK
+./stop-cluster.sh
+mvn clean compile package
+~/Documents/kafka-lab/exercise1/kafka-flink/flink-1.18.1/bin/flink run -c demokafka.DataStreamJob target/demo-flink-transaction-java-0.1.jar
+
+ ~/Documents/kafka-lab/exercise1/kafka-flink/flink-1.18.1/bin/flink run -c demokafka.OperatorDemo target/demo-flink-transaction-java-0.1.jar

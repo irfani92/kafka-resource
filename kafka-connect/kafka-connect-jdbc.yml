@@ -1,0 +1,113 @@
+# Run first: zk-single-kafka-single-ui-net-ext.yml
+name: kafka-connect-jdbc
+
+services:
+  
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    container_name: schema-registry-db
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka1:9092"
+    networks:
+      - kafka-external-net
+  
+  kafka-connect:
+    image: confluentinc/cp-kafka-connect-base:latest
+    container_name: kafka-connect-db
+    ports:
+      - "8083:8083"
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: "kafka1:9092"
+      CONNECT_REST_PORT: 8083
+      CONNECT_GROUP_ID: kafka-connect
+      CONNECT_CONFIG_STORAGE_TOPIC: _connect-configs
+      CONNECT_OFFSET_STORAGE_TOPIC: _connect-offsets
+      CONNECT_STATUS_STORAGE_TOPIC: _connect-status
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: 'http://schema-registry:8081'
+      CONNECT_REST_ADVERTISED_HOST_NAME: "kafka-connect"
+      CONNECT_LOG4J_APPENDER_STDOUT_LAYOUT_CONVERSIONPATTERN: "[%d] %p %X{connector.context}%m (%c:%L)%n"
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: "1"
+      CONNECT_PLUGIN_PATH: /usr/share/java,/usr/share/confluent-hub-components,/usr/share/filestream-connectors,/data/connect-jars        
+    volumes:
+      - ./data:/data
+    command:
+      - bash
+      - -c
+      - |
+        echo "Creating custom directory for JDBC drivers" && \        
+        confluent-hub install --no-prompt confluentinc/kafka-connect-jdbc:latest && \  
+        echo "Downloading MySQL and PostgreSQL JDBC drivers" && \  
+        cd /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc && \  
+        curl -o mysql-connector-java.jar https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.4.0/mysql-connector-j-8.4.0.jar && \  
+        curl -o postgresql-connector-java.jar https://jdbc.postgresql.org/download/postgresql-42.7.4.jar && \  
+        echo "Launching Kafka Connect worker" && \
+        /etc/confluent/docker/run
+    networks:
+      - kafka-external-net
+
+  mysql:
+    image: mysql:8.4
+    container_name: mysql-kdb
+    environment:
+      MYSQL_ROOT_PASSWORD: pass123
+      MYSQL_DATABASE: demo
+      MYSQL_USER: tester
+      MYSQL_PASSWORD: pass123
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - kafka-external-net
+    ports:
+      - "3306:3306"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin-kdb
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+    networks:
+      - kafka-external-net
+    ports:
+      - "8089:80"
+    
+  postgres:
+    image: postgres:14
+    container_name: postgres-kdb
+    environment:
+      POSTGRES_USER: tester
+      POSTGRES_PASSWORD: pass123
+      POSTGRES_DB: demo
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kafka-external-net
+    ports:
+      - "5432:5432"
+      
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin-kdb
+    environment:
+      PGADMIN_DEFAULT_EMAIL: a@email.com
+      PGADMIN_DEFAULT_PASSWORD: pass123
+    networks:
+      - kafka-external-net
+    ports:
+      - "8086:80"
+
+volumes:
+  mysql_data:
+  postgres_data:
+
+
+networks:
+  kafka-external-net:
+    external: true

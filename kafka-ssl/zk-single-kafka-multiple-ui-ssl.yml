@@ -1,0 +1,135 @@
+name: single-zk-secure-kafka-cluster
+
+services:
+  zookeeper1:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper1-ssl
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - ./certs:/etc/kafka/secrets
+    networks:
+      - kafka-net
+
+  kafka1-ssl:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka1-ssl
+    restart: unless-stopped  
+    depends_on:
+      - zookeeper1
+    ports:
+      - "9093:9093"
+      - "9997:9997"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
+      KAFKA_ADVERTISED_LISTENERS: SSL://kafka1-ssl:9093
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.broker1.keystore.jks
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: broker1_keystore_creds
+      KAFKA_SSL_KEY_CREDENTIALS: broker1_sslkey_creds
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.broker1.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: broker1_truststore_creds
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
+      KAFKA_SSL_CLIENT_AUTH: requested
+      KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SSL
+
+      KAFKA_JMX_PORT: 9997
+      KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka1-ssl -Dcom.sun.management.jmxremote.rmi.port=9997"
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+    networks:
+      - kafka-net
+
+  kafka2-ssl:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka2-ssl
+    restart: unless-stopped  
+    depends_on:
+      - zookeeper1
+    ports:
+      - "9094:9093"
+      - "9998:9998"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
+      KAFKA_ADVERTISED_LISTENERS: SSL://kafka2-ssl:9093
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.broker2.keystore.jks
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: broker2_keystore_creds
+      KAFKA_SSL_KEY_CREDENTIALS: broker2_sslkey_creds
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.broker2.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: broker2_truststore_creds
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
+      KAFKA_SSL_CLIENT_AUTH: requested
+      KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SSL
+
+      KAFKA_JMX_PORT: 9998
+      KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka2-ssl -Dcom.sun.management.jmxremote.rmi.port=9998"
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+    networks:
+      - kafka-net
+
+  kafka3-ssl:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka3-ssl
+    restart: unless-stopped  
+    depends_on:
+      - zookeeper1
+    ports:
+      - "9095:9093"
+      - "9999:9999"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181
+      KAFKA_ADVERTISED_LISTENERS: SSL://kafka3-ssl:9093
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.broker3.keystore.jks
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: broker3_keystore_creds
+      KAFKA_SSL_KEY_CREDENTIALS: broker3_sslkey_creds
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.broker3.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: broker3_truststore_creds
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
+      KAFKA_SSL_CLIENT_AUTH: requested
+      KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SSL
+
+      KAFKA_JMX_PORT: 9999
+      KAFKA_JMX_OPTS: "-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=kafka3-ssl -Dcom.sun.management.jmxremote.rmi.port=9999"
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+    networks:
+      - kafka-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui-ssl
+    ports:
+      - "8080:8080"
+    depends_on:
+      - kafka1-ssl
+      - kafka2-ssl
+      - kafka3-ssl
+    environment:
+      KAFKA_CLUSTERS_0_NAME: secure-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka1-ssl:9093,kafka2-ssl:9093,kafka3-ssl:9093
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.broker1.keystore.jks
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: "confluent"
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTORELOCATION: /etc/kafka/secrets/kafka.broker1.truststore.jks
+      KAFKA_CLUSTERS_0_SSL_TRUSTSTOREPASSWORD: "confluent"
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: '' 
+      KAFKA_CLUSTERS_0_METRICS_PORT: 9997
+
+      AUTH_TYPE: "LOGIN_FORM"
+      SPRING_SECURITY_USER_NAME: admin
+      SPRING_SECURITY_USER_PASSWORD: pass123
+    volumes:
+      - ./secrets:/etc/kafka/secrets
+    networks:
+      - kafka-net
+
+networks:
+  kafka-net:
+    driver: bridge

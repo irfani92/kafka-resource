@@ -1,0 +1,9 @@
+name: email-fake-local
+
+services:
+  smtp4dev:
+    image: rnwood/smtp4dev
+    ports:
+      - "25:25"
+      - "8025:80"
+    restart: unless-stopped 
