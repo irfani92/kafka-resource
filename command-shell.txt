@@ -23,20 +23,12 @@ Created topic myrepublic.
 myrepublic
 topic1
 [appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --create --topic myrepublic_kafka --partitions 3 --replication-factor 1
-WARNING: Due to limitations in metric names, topics with a period ('.') or underscore ('_') could collide. To avoid issues it is best to use either, but not both.
-Created topic myrepublic_kafka.
-[appuser@kafka1 ~]$ clear
-bash: clear: command not found
-[appuser@kafka1 ~]$ clear
-bash: clear: command not found
-[appuser@kafka1 ~]$ cls
-bash: cls: command not found
+
 [appuser@kafka1 ~]$ kafka-topics --bootstrap-server localhost:9092 --list
 myrepublic
 myrepublic_kafka
 topic1
-[appuser@kafka1 ~]$ kafka-console-produces --broker-list localhost:9092 --topic myrepublic
-bash: kafka-console-produces: command not found
+
 [appuser@kafka1 ~]$ kafka-console-producer --broker-list localhost:9092 --topic myrepublic
 >Hello, Kafka !
 >This message from Kafka producer!
@@ -49,8 +41,7 @@ bash: kafka-console-produces: command not found
 >key1:Message with key1
 >key2:Message with key2
 >key3:Message with key3
->^C[appuser@kafka1 ~]$ kafka-console-consumer --bootstrap-server localhost:9092 --topic myrepublic --from-beginning --property print.key=true --property print.value=true
-bash: kafka-console-proconsumer: command not found
+
 [appuser@kafka1 ~]$ kafka-console-consumer --bootstrap-server localhost:9092 --topic myrepublic --from-beginning --property print.key=true --property print.value=true
 key1	Message with key1
 key2	Message with key2
